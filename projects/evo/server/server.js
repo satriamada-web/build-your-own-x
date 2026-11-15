@@ -19,10 +19,10 @@ const STATIC_FILES = {
 const MAX_BODY = 64 * 1024;
 const buckets = new Map();
 
-function send(res, status, payload) {
+function reply(status, payload, responseOrigin = ALLOWED_ORIGIN) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": responseOrigin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "X-Content-Type-Options": "nosniff"
@@ -41,17 +41,22 @@ function rateAllowed(ip) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   const origin = req.headers.origin;
-  const forwardedProto = String(req.headers["x-forwarded-proto"] || "http").split(",")[0].trim();
-  const sameOrigin = origin === forwardedProto + "://" + req.headers.host;
+  const requestHost = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+  let sameOrigin = false;
+  if (origin) {
+    try { sameOrigin = new URL(origin).host === requestHost; } catch {}
+  }
+  const responseOrigin = origin && (sameOrigin || origin === ALLOWED_ORIGIN) ? origin : ALLOWED_ORIGIN;
+  const reply = (status, payload) => reply(status, payload, responseOrigin);
 
   if (origin && ALLOWED_ORIGIN !== "*" && origin !== ALLOWED_ORIGIN && !sameOrigin) {
-    send(res, 403, { error: "Origin not allowed." });
+    reply(403, { error: "Origin not allowed." });
     return;
   }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
-      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Origin": responseOrigin,
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       "Access-Control-Max-Age": "600"
@@ -71,28 +76,28 @@ const server = http.createServer(async (req, res) => {
       });
       res.end(content);
     } catch {
-      send(res, 500, { error: "Frontend file could not be loaded." });
+      reply(500, { error: "Frontend file could not be loaded." });
     }
     return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    send(res, 200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL });
+    reply(200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL });
     return;
   }
 
   if (req.method !== "POST" || url.pathname !== "/api/chat") {
-    send(res, 404, { error: "Not found" });
+    reply(404, { error: "Not found" });
     return;
   }
 
   const ip = req.socket.remoteAddress || "unknown";
   if (!rateAllowed(ip)) {
-    send(res, 429, { error: "Rate limit exceeded. Try again in one minute." });
+    reply(429, { error: "Rate limit exceeded. Try again in one minute." });
     return;
   }
   if (!API_KEY) {
-    send(res, 503, { error: "Backend belum memiliki OPENAI_API_KEY." });
+    reply(503, { error: "Backend belum memiliki OPENAI_API_KEY." });
     return;
   }
 
@@ -101,13 +106,13 @@ const server = http.createServer(async (req, res) => {
     for await (const chunk of req) {
       raw += chunk;
       if (raw.length > MAX_BODY) {
-        send(res, 413, { error: "Request too large." });
+        reply(413, { error: "Request too large." });
         return;
       }
     }
     const body = JSON.parse(raw || "{}");
     if (typeof body.message !== "string" || !body.message.trim() || body.message.length > 8000) {
-      send(res, 400, { error: "message wajib berupa teks 1–8000 karakter." });
+      reply(400, { error: "message wajib berupa teks 1–8000 karakter." });
       return;
     }
     const memories = Array.isArray(body.memories)
@@ -140,17 +145,17 @@ const server = http.createServer(async (req, res) => {
     });
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      send(res, 502, { error: data.error?.message || "Provider AI mengembalikan error." });
+      reply(502, { error: data.error?.message || "Provider AI mengembalikan error." });
       return;
     }
     const reply = data.choices?.[0]?.message?.content;
     if (typeof reply !== "string" || !reply.trim()) {
-      send(res, 502, { error: "Respons model kosong atau tidak valid." });
+      reply(502, { error: "Respons model kosong atau tidak valid." });
       return;
     }
-    send(res, 200, { reply: reply.trim(), model: MODEL });
+    reply(200, { reply: reply.trim(), model: MODEL });
   } catch (error) {
-    send(res, 400, { error: error instanceof SyntaxError ? "JSON tidak valid." : "Permintaan gagal diproses." });
+    reply(400, { error: error instanceof SyntaxError ? "JSON tidak valid." : "Permintaan gagal diproses." });
   }
 });
 
