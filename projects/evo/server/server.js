@@ -1,5 +1,7 @@
 import http from "node:http";
 
+// Keep request handlers as real JavaScript lines for Node.js deployment.
+
 const PORT = Number(process.env.PORT || 8787);
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
