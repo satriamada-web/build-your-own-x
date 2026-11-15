@@ -24,7 +24,21 @@ function rateAllowed(ip) {
   return entry.count <= 20;
 }
 const server = http.createServer(async (req, res) => {
-  if (req.method === "OPTIONS") {\n    res.writeHead(204, { "Access-Control-Allow-Origin": ALLOWED_ORIGIN, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "600" });\n    res.end(); return;\n  }\n  const origin = req.headers.origin;\n  if (origin && ALLOWED_ORIGIN !== "*" && origin !== ALLOWED_ORIGIN) { send(res, 403, { error: "Origin not allowed." }); return; }
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "600"
+    });
+    res.end();
+    return;
+  }
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGIN !== "*" && origin !== ALLOWED_ORIGIN) {
+    send(res, 403, { error: "Origin not allowed." });
+    return;
+  }
   const url = new URL(req.url, "http://localhost");
   if (req.method === "GET" && url.pathname === "/api/health") {
     send(res, 200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL }); return;
