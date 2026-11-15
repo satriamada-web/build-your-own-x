@@ -4,7 +4,7 @@ const PORT = Number(process.env.PORT || 8787);
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const BASE_URL = (process.env.OPENAI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "*";
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "http://localhost:5500";
 const MAX_BODY = 64 * 1024;
 const buckets = new Map();
 
@@ -24,7 +24,7 @@ function rateAllowed(ip) {
   return entry.count <= 20;
 }
 const server = http.createServer(async (req, res) => {
-  if (req.method === "OPTIONS") { send(res, 204, {}); return; }
+  if (req.method === "OPTIONS") {\n    res.writeHead(204, { "Access-Control-Allow-Origin": ALLOWED_ORIGIN, "Access-Control-Allow-Methods": "GET, POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "600" });\n    res.end(); return;\n  }\n  const origin = req.headers.origin;\n  if (origin && ALLOWED_ORIGIN !== "*" && origin !== ALLOWED_ORIGIN) { send(res, 403, { error: "Origin not allowed." }); return; }
   const url = new URL(req.url, "http://localhost");
   if (req.method === "GET" && url.pathname === "/api/health") {
     send(res, 200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL }); return;
