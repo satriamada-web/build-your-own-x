@@ -19,7 +19,7 @@ const STATIC_FILES = {
 const MAX_BODY = 64 * 1024;
 const buckets = new Map();
 
-function reply(status, payload, responseOrigin = ALLOWED_ORIGIN) {
+function sendJson(res, status, payload, responseOrigin = ALLOWED_ORIGIN) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Access-Control-Allow-Origin": responseOrigin,
@@ -47,10 +47,10 @@ const server = http.createServer(async (req, res) => {
     try { sameOrigin = new URL(origin).host === requestHost; } catch {}
   }
   const responseOrigin = origin && (sameOrigin || origin === ALLOWED_ORIGIN) ? origin : ALLOWED_ORIGIN;
-  const reply = (status, payload) => reply(status, payload, responseOrigin);
+  const respond = (status, payload) => sendJson(res, status, payload, responseOrigin);
 
   if (origin && ALLOWED_ORIGIN !== "*" && origin !== ALLOWED_ORIGIN && !sameOrigin) {
-    reply(403, { error: "Origin not allowed." });
+    respond(403, { error: "Origin not allowed." });
     return;
   }
 
@@ -76,28 +76,28 @@ const server = http.createServer(async (req, res) => {
       });
       res.end(content);
     } catch {
-      reply(500, { error: "Frontend file could not be loaded." });
+      respond(500, { error: "Frontend file could not be loaded." });
     }
     return;
   }
 
   if (req.method === "GET" && url.pathname === "/api/health") {
-    reply(200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL });
+    respond(200, { ok: true, providerConfigured: Boolean(API_KEY), model: MODEL });
     return;
   }
 
   if (req.method !== "POST" || url.pathname !== "/api/chat") {
-    reply(404, { error: "Not found" });
+    respond(404, { error: "Not found" });
     return;
   }
 
   const ip = req.socket.remoteAddress || "unknown";
   if (!rateAllowed(ip)) {
-    reply(429, { error: "Rate limit exceeded. Try again in one minute." });
+    respond(429, { error: "Rate limit exceeded. Try again in one minute." });
     return;
   }
   if (!API_KEY) {
-    reply(503, { error: "Backend belum memiliki OPENAI_API_KEY." });
+    respond(503, { error: "Backend belum memiliki OPENAI_API_KEY." });
     return;
   }
 
@@ -106,13 +106,13 @@ const server = http.createServer(async (req, res) => {
     for await (const chunk of req) {
       raw += chunk;
       if (raw.length > MAX_BODY) {
-        reply(413, { error: "Request too large." });
+        respond(413, { error: "Request too large." });
         return;
       }
     }
     const body = JSON.parse(raw || "{}");
     if (typeof body.message !== "string" || !body.message.trim() || body.message.length > 8000) {
-      reply(400, { error: "message wajib berupa teks 1–8000 karakter." });
+      respond(400, { error: "message wajib berupa teks 1–8000 karakter." });
       return;
     }
     const memories = Array.isArray(body.memories)
@@ -145,17 +145,17 @@ const server = http.createServer(async (req, res) => {
     });
     const data = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      reply(502, { error: data.error?.message || "Provider AI mengembalikan error." });
+      respond(502, { error: data.error?.message || "Provider AI mengembalikan error." });
       return;
     }
-    const reply = data.choices?.[0]?.message?.content;
-    if (typeof reply !== "string" || !reply.trim()) {
-      reply(502, { error: "Respons model kosong atau tidak valid." });
+    const replyContent = data.choices?.[0]?.message?.content;
+    if (typeof replyContent !== "string" || !replyContent.trim()) {
+      respond(502, { error: "Respons model kosong atau tidak valid." });
       return;
     }
-    reply(200, { reply: reply.trim(), model: MODEL });
+    respond(200, { reply: replyContent.trim(), model: MODEL });
   } catch (error) {
-    reply(400, { error: error instanceof SyntaxError ? "JSON tidak valid." : "Permintaan gagal diproses." });
+    respond(400, { error: error instanceof SyntaxError ? "JSON tidak valid." : "Permintaan gagal diproses." });
   }
 });
 
