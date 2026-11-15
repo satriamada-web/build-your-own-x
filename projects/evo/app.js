@@ -119,14 +119,41 @@ function renderLearning() {
     $("adaptationSummary").textContent=lines.join("\n");
   }
 }
+async function requestRemote(text, intent, memories, adaptation) {
+  const endpoint=localStorage.getItem("evo.api.endpoint.v1");
+  if(!endpoint) return null;
+  const response=await fetch(endpoint.replace(/\/$/,"")+"/api/chat",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:text,memories:memories.map(x=>x.content),strategy:adaptation.instruction})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(data.error||"Backend tidak dapat memproses permintaan.");
+  if(typeof data.reply!=="string") throw new Error("Format respons backend tidak valid.");
+  const episode={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),intent,input:text,memoryIds:memories.map(x=>x.id),strategy:"remote-"+adaptation.mode,at:new Date().toISOString()};
+  const episodes=loadEpisodes();episodes.push(episode);write(EPISODE_KEY,episodes.slice(-500));
+  return {reply:data.reply,episodeId:episode.id};
+}
+async function sendMessage(text) {
+  addMessage("user",text);
+  const input=$("userInput");input.value="";input.disabled=true;
+  try {
+    const intent=detectIntent(text), memories=recall(text), adaptation=adaptationFor(intent);
+    const remote=await requestRemote(text,intent,memories,adaptation);
+    if(remote) {
+      const context=memories.length?"\n\nKonteks memori yang digunakan:\n"+memories.map(m=>"• "+m.content).join("\n"):"";
+      addMessage("evo",remote.reply+context+"\n\nMesin penalaran: remote · Strategi: "+adaptation.mode,intent.toUpperCase(),remote.episodeId);
+    } else {
+      const result=think(text);
+      const used=result.memoryText==="Belum ada memori yang cocok."?"":"\n\nKonteks memori yang cocok:\n"+result.memoryText;
+      addMessage("evo",result.response+used+"\n\nUsulan langkah berikutnya: "+result.next+"\n\nMesin penalaran: lokal · Strategi adaptasi: "+result.adaptation.mode+" ("+result.adaptation.instruction+")",result.intent.toUpperCase(),result.episodeId);
+    }
+    turns++;$("turnCount").textContent=turns;renderLearning();
+  } catch(error) {
+    addMessage("evo","Koneksi mesin penalaran gagal: "+error.message+"\nPeriksa URL backend dan status server. Tidak ada tindakan eksternal yang dijalankan.","CORE");
+  } finally { input.disabled=false;input.focus(); }
+}
 $("chatForm").addEventListener("submit",event=>{
-  event.preventDefault();const text=$("userInput").value.trim();if(!text)return;
-  addMessage("user",text);$("userInput").value="";
-  const result=think(text);turns++;$("turnCount").textContent=turns;
-  const used=result.memoryText==="Belum ada memori yang cocok."?"":"\n\nKonteks memori yang cocok:\n"+result.memoryText;
-  const confidence="\n\nStrategi adaptasi: "+result.adaptation.mode+" ("+result.adaptation.instruction+")";
-  addMessage("evo",result.response+used+"\n\nUsulan langkah berikutnya: "+result.next+confidence,result.intent.toUpperCase(),result.episodeId);
-  renderLearning();
+  event.preventDefault();const text=$("userInput").value.trim();if(text)sendMessage(text);
 });
 $("userInput").addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();$("chatForm").requestSubmit();}});
 $("addMemory").addEventListener("click",()=>$("memoryDialog").showModal());
@@ -161,3 +188,20 @@ $("importFile").addEventListener("change",async event=>{
   event.target.value="";
 });
 renderMemory();renderLearning();
+
+const endpointInput=$("apiEndpoint");
+endpointInput.value=localStorage.getItem("evo.api.endpoint.v1")||"";
+$("saveEndpoint").addEventListener("click",()=>{
+  const value=endpointInput.value.trim();
+  if(value){try{new URL(value);localStorage.setItem("evo.api.endpoint.v1",value);$("backendStatus").textContent="ENDPOINT SET";}catch{$("backendStatus").textContent="INVALID URL";}}
+  else{localStorage.removeItem("evo.api.endpoint.v1");$("backendStatus").textContent="LOCAL MODE";}
+});
+$("checkBackend").addEventListener("click",async()=>{
+  const value=endpointInput.value.trim();
+  if(!value){$("backendStatus").textContent="LOCAL MODE";return;}
+  try{
+    const response=await fetch(value.replace(/\/$/,"")+"/api/health");
+    const data=await response.json();
+    $("backendStatus").textContent=response.ok&&data.ok?(data.providerConfigured?"REMOTE READY":"KEY MISSING"):"BACKEND ERROR";
+  }catch{$("backendStatus").textContent="OFFLINE / CORS";}
+});
