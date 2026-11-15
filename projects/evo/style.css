@@ -4,3 +4,5 @@
 @media(max-width:780px){.shell{padding:19px 14px}.hero{padding:43px 0 28px}.workspace{grid-template-columns:1fr}.messages{height:330px}.side{grid-template-columns:1fr 1fr}.pipeline{grid-column:1/-1}}@media(max-width:480px){.side{grid-template-columns:1fr}.pipeline{grid-column:auto}.status{font-size:8px}.hero p{font-size:13px}}
 
 .memory-actions{display:flex;gap:5px;flex-wrap:wrap}.memory-actions .ghost{padding:7px 8px;font-size:10px}.feedback{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;color:#7f8da5;font-size:10px}.feedback button{border:1px solid #34445e;background:#142238;color:#bcd0e8;border-radius:7px;padding:5px 8px;font-size:10px;cursor:pointer}.feedback button:hover,.ghost:hover{border-color:#7dd3fc;color:#7dd3fc}
+
+.adaptation-summary{white-space:pre-wrap;color:#aebed4;background:#0b1424;border:1px solid #263750;border-radius:9px;padding:11px;font:9px/1.8 'DM Mono';overflow:auto}.learning-panel .metric strong{font-size:16px}.learning-panel .muted{margin-top:10px}
