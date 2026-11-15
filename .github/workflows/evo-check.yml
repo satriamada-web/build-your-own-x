@@ -1,0 +1,27 @@
+name: EVO checks
+
+on:
+  push:
+    branches: [evo-v0.1]
+    paths:
+      - "projects/evo/**"
+      - ".github/workflows/evo-check.yml"
+  pull_request:
+    paths:
+      - "projects/evo/**"
+      - ".github/workflows/evo-check.yml"
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check frontend JavaScript syntax
+        run: node --check projects/evo/app.js
+      - name: Check backend JavaScript syntax
+        run: node --check projects/evo/server/server.js
+      - name: Validate package metadata
+        run: node -e "JSON.parse(require('fs').readFileSync('projects/evo/server/package.json','utf8'))"
