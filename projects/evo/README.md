@@ -34,3 +34,27 @@ Memory is local to the browser profile and device. Clearing browser site data ca
 
 ## Safety
 EVO may analyze and propose. External actions require explicit user approval. Never put credentials or private user memory in this repository.
+
+
+## Verification status and remaining setup
+
+The repository includes a GitHub Actions syntax-check workflow at `.github/workflows/evo-check.yml`. It runs `node --check` on the frontend and API source and validates the backend package metadata when GitHub Actions is enabled for the branch.
+
+### Before using remote reasoning
+
+1. Deploy `projects/evo/server` to a Node.js 20+ host.
+2. Add `OPENAI_API_KEY` as a private environment secret in that host. Never commit the real key.
+3. Set `ALLOWED_ORIGIN` to the exact deployed frontend origin (scheme + hostname, no path).
+4. Deploy the static frontend from `projects/evo`.
+5. Paste the backend service base URL into the frontend's Mesin Penalaran panel and run Periksa Koneksi.
+6. Send a test prompt and verify that the response is marked remote.
+
+The deployment host and credentials are not configured by this repository. The API currently has basic in-memory per-IP rate limiting and origin checks; it is an experimental single-user backend, not yet production-ready for an unrestricted public audience. Add authentication, durable abuse controls, quotas, and data-retention policy before inviting other users.
+
+### What remains intentionally unconfigured
+
+- Hosting account/service creation and public deployment.
+- Provider API key and billing configuration.
+- Frontend public URL and matching CORS origin.
+- Authenticated cloud database for cross-device memory sync.
+- Browser-level end-to-end test after deployment.
