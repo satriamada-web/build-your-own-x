@@ -52,6 +52,13 @@
           <pre id="adaptationSummary" class="adaptation-summary">Mengumpulkan pengalaman...</pre>
           <p class="muted">Strategi berubah berdasarkan pola penilaian per kategori setelah minimal 3 feedback. Ini adaptasi aturan, bukan pelatihan model AI.</p>
         </section>
+        <section class="panel backend-panel">
+          <div class="panel-head"><div><span class="eyebrow">REASONING PROVIDER</span><h2>Mesin penalaran</h2></div><span id="backendStatus" class="live">LOCAL MODE</span></div>
+          <label for="apiEndpoint">URL backend EVO</label>
+          <input id="apiEndpoint" type="url" placeholder="https://api-domain-kamu.com">
+          <div class="memory-actions"><button id="saveEndpoint" class="ghost" type="button">Simpan endpoint</button><button id="checkBackend" class="ghost" type="button">Periksa koneksi</button></div>
+          <p class="muted">Opsional. API key harus disimpan di server, bukan di browser. Kosongkan endpoint untuk memakai mesin aturan lokal.</p>
+        </section>
         <section class="panel pipeline">
           <span class="eyebrow">DECISION PIPELINE</span>
           <div class="step"><b>01</b><span>Intent analysis</span><i>READY</i></div>
