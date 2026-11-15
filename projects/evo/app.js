@@ -10,32 +10,7 @@ function loadMemory() {
 function loadFeedback() { try { return JSON.parse(localStorage.getItem(FEEDBACK_KEY) || "[]"); } catch { return []; } }
 function saveMemory(items) {
   localStorage.setItem(STORE_KEY, JSON.stringify(items));
-  $("exportMemory").addEventListener("click", () => {
-  const payload = { format:"evo-memory", version:1, exportedAt:new Date().toISOString(), memories:loadMemory(), feedback:loadFeedback() };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob); const link = document.createElement("a");
-  link.href=url; link.download="evo-memory-backup.json"; link.click(); URL.revokeObjectURL(url);
-});
-$("importMemory").addEventListener("click", () => $("importFile").click());
-$("importFile").addEventListener("change", async event => {
-  const file = event.target.files?.[0]; if (!file) return;
-  try {
-    const payload = JSON.parse(await file.text());
-    if (payload.format !== "evo-memory" || !Array.isArray(payload.memories)) throw new Error("Format file tidak dikenali.");
-    const valid = payload.memories.filter(x => x && typeof x.content === "string" && x.content.trim()).map(x => ({
-      id: String(x.id || (crypto.randomUUID ? crypto.randomUUID() : Date.now()+Math.random())),
-      content: x.content.slice(0,3000), category: String(x.category || "general").slice(0,40),
-      createdAt: x.createdAt || new Date().toISOString()
-    }));
-    const merged = [...loadMemory()];
-    for (const item of valid) if (!merged.some(old => old.content === item.content)) merged.push(item);
-    saveMemory(merged);
-    if (Array.isArray(payload.feedback)) localStorage.setItem(FEEDBACK_KEY, JSON.stringify([...loadFeedback(), ...payload.feedback].slice(-500)));
-    addMessage("evo", valid.length + " catatan berhasil diproses. Catatan duplikat dilewati.", "MEMORY");
-  } catch (error) { alert("Impor gagal: " + error.message); }
-  event.target.value = "";
-});
-renderMemory();
+  renderMemory();
 }
 function tokenize(text) {
   return (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []).filter(w => w.length > 2);
@@ -132,5 +107,26 @@ $("memoryForm").addEventListener("submit", event => {
 $("clearChat").addEventListener("click", () => {
   $("messages").replaceChildren();
   addMessage("evo", "Riwayat tampilan percakapan dibersihkan. Memori tersimpan tetap ada sampai kamu menghapusnya.", "CORE");
+});
+$("exportMemory").addEventListener("click", () => {
+  const payload = { format:"evo-memory", version:1, exportedAt:new Date().toISOString(), memories:loadMemory(), feedback:loadFeedback() };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob); const link = document.createElement("a");
+  link.href=url; link.download="evo-memory-backup.json"; link.click(); URL.revokeObjectURL(url);
+});
+$("importMemory").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async event => {
+  const file = event.target.files?.[0]; if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    if (payload.format !== "evo-memory" || !Array.isArray(payload.memories)) throw new Error("Format file tidak dikenali.");
+    const valid = payload.memories.filter(x => x && typeof x.content === "string" && x.content.trim()).map(x => ({id:String(x.id || Date.now()+Math.random()),content:x.content.slice(0,3000),category:String(x.category || "general").slice(0,40),createdAt:x.createdAt || new Date().toISOString()}));
+    const merged = [...loadMemory()];
+    for (const item of valid) if (!merged.some(old => old.content === item.content)) merged.push(item);
+    saveMemory(merged);
+    if (Array.isArray(payload.feedback)) localStorage.setItem(FEEDBACK_KEY, JSON.stringify([...loadFeedback(), ...payload.feedback].slice(-500)));
+    addMessage("evo", valid.length + " catatan berhasil diproses. Catatan duplikat dilewati.", "MEMORY");
+  } catch (error) { alert("Impor gagal: " + error.message); }
+  event.target.value = "";
 });
 renderMemory();
