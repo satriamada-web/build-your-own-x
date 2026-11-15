@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>EVO — Artificial Digital Life</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="./"><span class="brand-mark">E</span><span>EVO<small>ARTIFICIAL DIGITAL LIFE</small></span></a>
+      <div class="status"><i></i> EXPERIMENTAL · v0.1</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">ADAPTIVE INTELLIGENCE SYSTEM</div>
+      <h1>A digital life,<br><em>learning one experience at a time.</em></h1>
+      <p>EVO mengolah pesan, menghubungkan konteks dengan memori, lalu mengusulkan langkah berikutnya. Kendali tetap berada di tanganmu.</p>
+    </section>
+
+    <section class="workspace">
+      <section class="panel conversation">
+        <div class="panel-head"><div><span class="eyebrow">INTERACTION</span><h2>Ruang interaksi</h2></div><button id="clearChat" class="ghost">Bersihkan chat</button></div>
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="message evo"><div class="avatar">E</div><div><div class="speaker">EVO <span>CORE</span></div><p>Halo. Aku EVO versi eksperimental. Ceritakan tujuan, pertanyaan, atau informasi yang ingin kamu pelajari.</p></div></article>
+        </div>
+        <form id="chatForm" class="composer">
+          <textarea id="userInput" rows="2" placeholder="Ketik pesan untuk EVO..." required></textarea>
+          <button class="send" type="submit" aria-label="Kirim pesan">↑</button>
+        </form>
+        <div class="hint">Enter untuk mengirim · Shift + Enter untuk baris baru</div>
+      </section>
+
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-head"><div><span class="eyebrow">COGNITIVE STATE</span><h2>Status sistem</h2></div><span class="live">● ACTIVE</span></div>
+          <div class="metric"><span>Memori tersimpan</span><strong id="memoryCount">0</strong></div>
+          <div class="metric"><span>Interaksi sesi ini</span><strong id="turnCount">0</strong></div>
+          <div class="metric"><span>Mode otonomi</span><strong class="small-value">Semi-autonomous</strong></div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><span class="eyebrow">LONG-TERM CONTEXT</span><h2>Memori EVO</h2></div><button id="addMemory" class="ghost">+ Simpan</button></div>
+          <p class="muted">Catatan yang kamu setujui akan disimpan di browser ini.</p>
+          <div id="memoryList" class="memory-list"><div class="empty">Belum ada memori. Simpan fakta atau preferensi untuk mulai membangun konteks.</div></div>
+        </section>
+        <section class="panel pipeline">
+          <span class="eyebrow">DECISION PIPELINE</span>
+          <div class="step"><b>01</b><span>Intent analysis</span><i>READY</i></div>
+          <div class="step"><b>02</b><span>Memory retrieval</span><i>READY</i></div>
+          <div class="step"><b>03</b><span>Decision engine</span><i>READY</i></div>
+          <div class="step"><b>04</b><span>Action proposal</span><i>APPROVAL</i></div>
+        </section>
+      </aside>
+    </section>
+    <footer>EXPERIMENTAL SYSTEM · Memory stays in this browser · External actions are never executed automatically.</footer>
+  </main>
+  <dialog id="memoryDialog">
+    <form id="memoryForm" method="dialog">
+      <div class="panel-head"><div><span class="eyebrow">USER-CONTROLLED MEMORY</span><h2>Simpan pengetahuan</h2></div><button type="button" id="closeDialog" class="ghost">✕</button></div>
+      <label for="memoryText">Informasi yang ingin EVO ingat</label>
+      <textarea id="memoryText" rows="4" placeholder="Contoh: Saya lebih suka penjelasan bertahap..." required></textarea>
+      <label for="memoryCategory">Kategori</label>
+      <select id="memoryCategory"><option value="preferensi">Preferensi</option><option value="fakta">Fakta</option><option value="tujuan">Tujuan</option><option value="pengalaman">Pengalaman</option></select>
+      <button class="send full" type="submit">Simpan ke memori lokal</button>
+      <p class="hint">Disimpan hanya di browser ini, bukan di repository GitHub.</p>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
